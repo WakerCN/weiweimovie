@@ -5,6 +5,10 @@ import store from './stores'
 
 Vue.config.productionTip = false
 
+Vue.filter('setWH', (url) => {
+  return url.replace(/\/w\.h/, '') + '@1l_1e_1c_128w_180h'
+})
+
 new Vue({
   router,
   store,
