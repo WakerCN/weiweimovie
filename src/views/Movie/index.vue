@@ -4,7 +4,7 @@
     <div id="content">
       <div class="movie_menu">
         <router-link tag="div" to="/movie/city" class="city_name">
-          <span>武汉</span><i class="iconfont icon-lower-triangle"></i>
+          <span>{{$store.state.city.nm}}</span><i class="iconfont icon-lower-triangle"></i>
         </router-link>
         <div class="hot_swtich">
           <router-link tag="div" to="/movie/nowplaying" class="hot_item">正在热映</router-link>
@@ -25,11 +25,30 @@
 <script>
 import Header from '@/components/Header'
 import TabBar from '@/components/TabBar'
+
+import { MessageBox } from 'mint-ui'
+
 export default {
   name: 'Movie',
   components: {
     Header,
     TabBar
+  },
+  mounted () {
+    setTimeout(() => {
+      MessageBox({
+        title: '定位',
+        message: `当前城市: ${this.$store.state.city.nm}`,
+        showCancelButton: true,
+        confirmButtonText: '切换定位'
+      }).then((res) => {
+        if (res === 'confirm') {
+          console.log('定位并切换')
+        }
+      }).catch((err) => {
+        console.log(err)
+      })
+    }, 3000)
   }
 }
 </script>
