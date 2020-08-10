@@ -1,25 +1,28 @@
 <template>
   <div class="city_body">
-    <div class="city_list">
-      <div class="city_hot">
-        <h2>热门城市</h2>
-        <ul class="clearfix">
-          <li v-for="item in hotList" :key="item.cityId">{{item.nm}}</li>
-        </ul>
-      </div>
-      <div class="city_sort" ref="city_sort">
-        <div v-for="item in cityList" :key="item.index">
-          <h2>{{item.index}}</h2>
-          <ul>
-            <li v-for="city in item.list" :key="city.cityId">{{city.nm}}</li>
+    <Loading v-if="isLoading"></Loading>
+    <Scroller v-else ref="city_scroller">
+      <div class="city_list">
+        <div class="city_hot">
+          <h2>热门城市</h2>
+          <ul class="clearfix">
+            <li v-for="item in hotList" :key="item.cityId" @tap="handleChangeCity(item.nm,item.id)">{{item.nm}}</li>
           </ul>
         </div>
+        <div class="city_sort" ref="city_sort">
+          <div v-for="item in cityList" :key="item.index">
+            <h2>{{item.index}}</h2>
+            <ul>
+              <li v-for="city in item.list" :key="city.cityId" @tap="handleChangeCity(city.nm,city.id)">{{city.nm}}</li>
+            </ul>
+          </div>
+        </div>
       </div>
-    </div>
+    </Scroller>
     <div class="city_index">
-      <ul>
-        <li v-for="(item,index) in cityList" :key="item.index" @touchstart='headleToIndex(index)'>{{item.index}}</li>
-      </ul>
+          <ul>
+            <li v-for="(item,index) in cityList" :key="item.index" @touchstart='headleToIndex(index)'>{{item.index}}</li>
+          </ul>
     </div>
   </div>
 </template>
@@ -32,17 +35,50 @@ export default {
   data () {
     return {
       cityList: [],
-      hotList: []
+      hotList: [],
+      isLoading: true
     }
   },
   mounted () {
-    // console.log('axios获取数据')
-    axios.get('../../data/cities-min.json')
-      .then(res => {
-        if (res.statusText === 'OK') {
+    var cityList = window.localStorage.getItem('cityList')
+    var hotList = window.localStorage.getItem('hotList')
+    if (cityList && hotList) {
+      this.cityList = JSON.parse(cityList)
+      this.hotList = JSON.parse(hotList)
+      this.isLoading = false
+    } else {
+      // console.log('axios获取数据')
+      axios.get('../../data/cities-min.json')
+        .then(res => {
+          if (res.statusText === 'OK') {
           // console.log(res.data.letterMap)
-          var cities = res.data.letterMap
-          this.formatCitylist(cities)
+            var cities = res.data.letterMap
+            this.formatCitylist(cities)
+            var { cityList, hotList } = this.formatCitylist(cities)
+            this.cityList = cityList
+            this.hotList = hotList
+            this.isLoading = false
+            // 存储到本地localStorage中
+            window.localStorage.setItem('cityList', JSON.stringify(cityList))
+            window.localStorage.setItem('hotList', JSON.stringify(hotList))
+          }
+        }).catch(err => {
+          console.log(err)
+        })
+      /*
+      axios({
+        url: 'https://m.maizuo.com/gateway?k=1536115',
+        headers: {
+          'X-Client-Info': '{"a":"3000","ch":"1002","v":"5.0.4","e":"15966110237361573945345"}',
+          'X-Host': 'mall.film-ticket.city.list'
+        }
+      }).then(res => {
+        // console.log('城市数据', res.data.data.cities)
+        // console.log('数据整理')
+        var msg = res.data.msg
+        if (msg === 'ok') {
+          var cities = res.data.data.cities
+
           var { cityList, hotList } = this.formatCitylist(cities)
           this.cityList = cityList
           this.hotList = hotList
@@ -50,28 +86,19 @@ export default {
       }).catch(err => {
         console.log(err)
       })
-    // axios({
-    //   url: 'https://m.maizuo.com/gateway?k=1536115',
-    //   headers: {
-    //     'X-Client-Info': '{"a":"3000","ch":"1002","v":"5.0.4","e":"15966110237361573945345"}',
-    //     'X-Host': 'mall.film-ticket.city.list'
-    //   }
-    // }).then(res => {
-    //   // console.log('城市数据', res.data.data.cities)
-    //   // console.log('数据整理')
-    //   var msg = res.data.msg
-    //   if (msg === 'ok') {
-    //     var cities = res.data.data.cities
-
-    //     var { cityList, hotList } = this.formatCitylist(cities)
-    //     this.cityList = cityList
-    //     this.hotList = hotList
-    //   }
-    // }).catch(err => {
-    //   console.log(err)
-    // })
+      */
+    }
   },
+
   methods: {
+
+    /** 切换城市 */
+    handleChangeCity (nm, id) {
+      this.$store.commit('city/CITY_INFO', { nm, id })
+      window.localStorage.setItem('nowNm', nm)
+      window.localStorage.setItem('nowId', id)
+      this.$router.push('/movie/nowplaying')
+    },
 
     /**
      * 格式化axios获取的城市信息
@@ -104,77 +131,78 @@ export default {
         hotList
       }
     },
-    // formatCitylist (cities) {
-    //   var cityList = []
-    //   var hotList = []
-
-    //   for (let i = 0; i < cities.length; i++) {
-    //     if (cities[i].isHot === 1) {
-    //       hotList.push(cities[i])
-    //     }
-
-    //     var firstLetter = cities[i].pinyin.substring(0, 1).toUpperCase()
-    //     if (inCitylist(firstLetter) === false) {
-    //       // 城市列表没有索引值，添加
-    //       cityList.push({
-    //         index: firstLetter,
-    //         list: [
-    //           {
-    //             cityId: cities[i].cityId,
-    //             name: cities[i].name
-    //           }
-    //         ]
-    //       })
-    //     } else {
-    //       // 添加城市
-    //       for (let j = 0; j < cityList.length; j++) {
-    //         if (cityList[j].index === firstLetter) {
-    //           cityList[j].list.push({
-    //             cityId: cities[i].cityId,
-    //             name: cities[i].name
-    //           })
-    //         }
-    //       }
-    //     }
-    //   }
-
-    //   // 判断字母是否在CityList中存在
-    //   function inCitylist (firstLetter) {
-    //     for (let i = 0; i < cityList.length; i++) {
-    //       if (firstLetter === cityList[i].index) {
-    //         return true
-    //       }
-    //     }
-    //     return false
-    //   }
-
-    //   // 结果集按index排序
-    //   cityList.sort((n1, n2) => {
-    //     if (n1.index > n2.index) {
-    //       return 1
-    //     } else if (n1.index < n2.index) {
-    //       return -1
-    //     } else {
-    //       return 0
-    //     }
-    //   })
-
-    //   console.log('cityList', cityList)
-    //   // console.log('hotList', hotList)
-
-    //   return {
-    //     cityList,
-    //     hotList
-    //   }
-    // },
 
     /**
-     * 跳转到对应索引值位置
-     */
+    formatCitylist (cities) {
+      var cityList = []
+      var hotList = []
+
+      for (let i = 0; i < cities.length; i++) {
+        if (cities[i].isHot === 1) {
+          hotList.push(cities[i])
+        }
+
+        var firstLetter = cities[i].pinyin.substring(0, 1).toUpperCase()
+        if (inCitylist(firstLetter) === false) {
+          // 城市列表没有索引值，添加
+          cityList.push({
+            index: firstLetter,
+            list: [
+              {
+                cityId: cities[i].cityId,
+                name: cities[i].name
+              }
+            ]
+          })
+        } else {
+          // 添加城市
+          for (let j = 0; j < cityList.length; j++) {
+            if (cityList[j].index === firstLetter) {
+              cityList[j].list.push({
+                cityId: cities[i].cityId,
+                name: cities[i].name
+              })
+            }
+          }
+        }
+      }
+
+      // 判断字母是否在CityList中存在
+      function inCitylist (firstLetter) {
+        for (let i = 0; i < cityList.length; i++) {
+          if (firstLetter === cityList[i].index) {
+            return true
+          }
+        }
+        return false
+      }
+
+      // 结果集按index排序
+      cityList.sort((n1, n2) => {
+        if (n1.index > n2.index) {
+          return 1
+        } else if (n1.index < n2.index) {
+          return -1
+        } else {
+          return 0
+        }
+      })
+
+      console.log('cityList', cityList)
+      // console.log('hotList', hotList)
+
+      return {
+        cityList,
+        hotList
+      }
+    },
+    */
+
+    /** 跳转到对应索引值位置 */
     headleToIndex (index) {
       // console.log(index)
       var h2 = this.$refs.city_sort.getElementsByTagName('h2')
-      this.$refs.city_sort.parentNode.scrollTop = h2[index].offsetTop
+      this.$refs.city_scroller.handleToScrollTop(h2[index])
     }
   }
 }

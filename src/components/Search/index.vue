@@ -30,6 +30,7 @@ export default {
   data () {
     return {
       searchTxt: '',
+      preCity: -1,
       movieList: []
     }
   },
@@ -43,19 +44,16 @@ export default {
   watch: {
     searchTxt (newVal) {
       var that = this
+      var curCity = this.$store.state.city.id
+      this.isLoading = true
       this.cancelRequest()
-      Axios.get(`/ajax/search?kw=${newVal}&cityId=57&stype=-1`, {
+      Axios.get(`/ajax/search?kw=${newVal}&cityId=${curCity}&stype=-1`, {
         cancelToken: new Axios.CancelToken(function (c) {
           that.source = c
         })
       }).then(res => {
-        // console.log(newVal)
-        // console.log(res.data.movies.list)
         this.movieList = res.data.movies.list
       }).catch(err => {
-        // if (that.Axios.isCancel(err)) {
-        //   console.log('Rquest canceled', err.message)
-        // } // 请求如果被取消，这里是返回取消的message
         console.log(err)
       })
     }

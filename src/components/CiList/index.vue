@@ -1,21 +1,24 @@
 <template>
   <div class="cinema_body">
-    <ul>
-      <li v-for="cinema in cinemaList" :key="cinema.id">
-        <div>
-          <span>{{cinema.nm}}</span>
-          <span class="q"  v-if="cinema.sellPrice != ''"><span class="price">{{cinema.sellPrice}}</span> 元起</span>
-        </div>
-        <div class="address">
-          <span>{{cinema.addr}}</span>
-          <span>{{cinema.distance}}</span>
-        </div>
-        <div class="card">
-            <div v-for="(tag,key) in cinema.tag" v-if="tag === 1" :key="key" :class=" key | classCard">{{key | formateTag}}</div>
-          <!-- <div v-if="cinema.tag.snack === 1">小吃</div> -->
-        </div>
-      </li>
-    </ul>
+    <Loading v-if="isLoading"></Loading>
+    <Scroller v-else>
+      <ul>
+        <li v-for="cinema in cinemaList" :key="cinema.id">
+          <div>
+            <span>{{cinema.nm}}</span>
+            <span class="q"  v-if="cinema.sellPrice != ''"><span class="price">{{cinema.sellPrice}}</span> 元起</span>
+          </div>
+          <div class="address">
+            <span>{{cinema.addr}}</span>
+            <span>{{cinema.distance}}</span>
+          </div>
+          <div class="card">
+              <div v-for="(tag,key) in cinema.tag" v-if="tag === 1" :key="key" :class=" key | classCard">{{key | formateTag}}</div>
+            <!-- <div v-if="cinema.tag.snack === 1">小吃</div> -->
+          </div>
+        </li>
+      </ul>
+    </Scroller>
   </div>
 </template>
 
@@ -25,7 +28,9 @@ export default {
   name: 'CiList',
   data () {
     return {
-      cinemaList: []
+      isLoading: true,
+      cinemaList: [],
+      preCity: '-1'
     }
   },
 
@@ -92,10 +97,14 @@ export default {
     }
   },
 
-  mounted () {
-    Axios.get('/ajax/cinemaList?ci=57').then(res => {
-      console.log(res.data.cinemas)
+  activated () {
+    var curCity = this.$store.state.city.id
+    if (curCity === this.preCity) { return }
+    this.isLoading = true
+    Axios.get(`/ajax/cinemaList?ci=${curCity}`).then(res => {
       this.cinemaList = res.data.cinemas
+      this.isLoading = false
+      this.preCity = curCity
     }).catch(err => {
       console.log(err)
     })
